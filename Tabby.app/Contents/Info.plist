@@ -18,5 +18,9 @@
     <string>APPL</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Tabby needs to access your browser to read open tabs.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Tabby needs access to your calendar to set reminders for tabs.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Tabby needs access to your reminders to set tasks for tabs.</string>
 </dict>
 </plist>

@@ -269,6 +269,7 @@ struct TabRow: View {
     let tab: TabItem
     @EnvironmentObject var tabManager: TabManager
     @State private var isExpanded: Bool = false
+    @State private var isReminderExpanded: Bool = false
     @State private var noteText: String = ""
     @FocusState private var isNoteFocused: Bool
     
@@ -307,6 +308,14 @@ struct TabRow: View {
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
+                    
+                    if let note = tab.note, !note.isEmpty {
+                        Text(note)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundColor(.blue.opacity(0.8))
+                            .lineLimit(2)
+                            .padding(.top, 2)
+                    }
                 }
                 
                 Spacer()
@@ -317,11 +326,6 @@ struct TabRow: View {
                         Image(systemName: "bell.fill")
                             .font(.caption2)
                             .foregroundColor(.orange)
-                    }
-                    if tab.note != nil {
-                        Image(systemName: "note.text")
-                            .font(.caption2)
-                            .foregroundColor(.blue)
                     }
                 }
             }
@@ -352,7 +356,7 @@ struct TabRow: View {
                             .fontWeight(.semibold)
                             .foregroundColor(.secondary)
                         
-                        TextField("Why is this tab open? (e.g. 'Read for research')", text: $noteText, onCommit: {
+                        TextField("Why is this tab open?", text: $noteText, onCommit: {
                             saveNote()
                         })
                         .textFieldStyle(.plain)
@@ -364,38 +368,81 @@ struct TabRow: View {
                         .focused($isNoteFocused)
                     }
                     
-                    // Reminder
-                    HStack {
-                        DatePicker("Remind me:", selection: Binding(get: {
-                            tab.reminderDate ?? Date()
-                        }, set: { newDate in
-                            withAnimation {
-                                tabManager.updateReminder(for: tab, date: newDate)
-                            }
-                        }), in: Date()..., displayedComponents: [.date, .hourAndMinute])
-                        .labelsHidden()
-                        .scaleEffect(0.9, anchor: .leading)
-                        
-                        Spacer()
-                        
-                        // Action Buttons
-                        if tab.reminderDate != nil {
+                    // Reminder Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Reminder")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
                             Button(action: {
-                                withAnimation { tabManager.updateReminder(for: tab, date: nil) }
+                                withAnimation(.spring()) {
+                                    isReminderExpanded.toggle()
+                                }
                             }) {
-                                Image(systemName: "bell.slash.fill")
-                                    .foregroundColor(.red.opacity(0.8))
+                                HStack(spacing: 4) {
+                                    Image(systemName: tab.reminderDate != nil ? "bell.fill" : "bell")
+                                    Text(tab.reminderDate != nil ? "Edit Reminder" : "Add Reminder")
+                                }
+                                .font(.caption)
+                                .foregroundColor(tab.reminderDate != nil ? .orange : .blue)
+                                .padding(6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                                )
                             }
-                            .buttonStyle(GlassButtonStyle())
+                            .buttonStyle(.plain)
+                            
+                            if tab.reminderDate != nil {
+                                Button(action: {
+                                    withAnimation { tabManager.updateReminder(for: tab, date: nil) }
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.caption)
+                                        .foregroundColor(.red.opacity(0.8))
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.leading, 4)
+                            }
                         }
-                        
+
+                        if isReminderExpanded || (tab.reminderDate != nil && isReminderExpanded) {
+                            DatePicker("Select Date", selection: Binding(get: {
+                                tab.reminderDate ?? Date()
+                            }, set: { newDate in
+                                withAnimation {
+                                    tabManager.updateReminder(for: tab, date: newDate)
+                                }
+                            }), in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                            .datePickerStyle(.graphical)
+                            .labelsHidden()
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.3))
+                            )
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        } else if let date = tab.reminderDate {
+                            Text("Reminder set for \(date.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                                .padding(.leading, 4)
+                        }
+                    }
+                    
+                    // Save Button
+                    HStack {
+                        Spacer()
                         Button(action: {
                             saveNote()
                         }) {
-                            Text("Save")
+                            Text("Save Changes")
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .padding(.horizontal, 8)
+                                .padding(.horizontal, 12)
                         }
                         .buttonStyle(GlassButtonStyle(color: .blue))
                     }
