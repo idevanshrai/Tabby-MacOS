@@ -2,6 +2,28 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var tabManager: TabManager
+    @State private var showingSettings = false
+    
+    var body: some View {
+        ZStack {
+            if !showingSettings {
+                MainView(showingSettings: $showingSettings)
+                    .transition(.move(edge: .leading))
+            } else {
+                SettingsView(showingSettings: $showingSettings)
+                    .transition(.move(edge: .trailing))
+            }
+        }
+        .frame(width: 400, height: 600)
+        .onAppear {
+            tabManager.refreshTabs()
+        }
+    }
+}
+
+struct MainView: View {
+    @EnvironmentObject var tabManager: TabManager
+    @Binding var showingSettings: Bool
     
     var body: some View {
         VStack(spacing: 0) {
@@ -25,7 +47,19 @@ struct ContentView: View {
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(GlassButtonStyle())
-                .padding(.trailing, 8)
+                .padding(.trailing, 4)
+                
+                Button(action: {
+                    withAnimation(.spring()) {
+                        showingSettings = true
+                    }
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(GlassButtonStyle())
+                .padding(.trailing, 4)
                 
                 Button(action: {
                     NSApplication.shared.terminate(nil)
@@ -58,10 +92,159 @@ struct ContentView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.5))
         .background(.ultraThinMaterial)
-        .frame(width: 400, height: 600)
-        .onAppear {
-            tabManager.refreshTabs()
+    }
+}
+
+struct SettingsView: View {
+    @EnvironmentObject var tabManager: TabManager
+    @Binding var showingSettings: Bool
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    withAnimation(.spring()) {
+                        showingSettings = false
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.secondary)
+                }
+                .buttonStyle(GlassButtonStyle())
+                
+                Spacer()
+                
+                Text("Settings")
+                    .font(.headline)
+                
+                Spacer()
+                
+                // Invisible spacer for visual balance
+                Color.clear.frame(width: 60, height: 1)
+            }
+            .padding()
+            .background(.ultraThinMaterial)
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    
+                    // Browser Selection
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Broswers to Scan")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.secondary)
+                            .textCase(.uppercase)
+                        
+                        VStack(spacing: 1) {
+                            ForEach(BrowserType.allCases) { browser in
+                                ToggleRow(
+                                    title: browser.rawValue,
+                                    icon: browserIcon(for: browser.rawValue),
+                                    isOn: Binding(
+                                        get: { tabManager.enabledBrowsers[browser] ?? true },
+                                        set: { _ in tabManager.toggleBrowser(browser) }
+                                    )
+                                )
+                            }
+                        }
+                        .background(.regularMaterial)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                        )
+                    }
+                    
+                    // About Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("About")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.secondary)
+                            .textCase(.uppercase)
+                        
+                        VStack(spacing: 16) {
+                            Image(systemName: "safari")
+                                .font(.system(size: 40))
+                                .foregroundColor(.blue)
+                                .padding(.top, 8)
+                            
+                            VStack(spacing: 4) {
+                                Text("Tabby")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                Text("Version 1.0.0")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Divider()
+                            
+                            VStack(spacing: 8) {
+                                Text("Designed & Developed by")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("Devansh Rai")
+                                    .fontWeight(.medium)
+                                
+                                Link("Contact Developer", destination: URL(string: "mailto:idevanshrai@gmail.com")!)
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                            }
+                            .padding(.bottom, 8)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(.regularMaterial)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                        )
+                    }
+                }
+                .padding()
+            }
         }
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.5))
+        .background(.ultraThinMaterial)
+    }
+    
+    func browserIcon(for browser: String) -> String {
+        switch browser {
+        case "Google Chrome": return "globe"
+        case "Safari": return "safari"
+        case "Arc": return "circle.grid.cross"
+        default: return "network"
+        }
+    }
+}
+
+struct ToggleRow: View {
+    let title: String
+    let icon: String
+    @Binding var isOn: Bool
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .frame(width: 20)
+                .foregroundColor(.secondary)
+            Text(title)
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .toggleStyle(.switch)
+                .labelsHidden()
+        }
+        .padding()
+        .background(Color.white.opacity(0.05))
     }
 }
 

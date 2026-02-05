@@ -10,11 +10,25 @@ import UserNotifications
 @MainActor
 class TabManager: ObservableObject {
     @Published var tabs: [TabItem] = []
+    @Published var enabledBrowsers: [BrowserType: Bool] = [:]
+    
     private var persistence: [String: TabMetadata] = [:]
     
     init() {
+        // Initialize default enabled settings
+        for browser in BrowserType.allCases {
+            enabledBrowsers[browser] = UserDefaults.standard.object(forKey: "Enabled_\(browser.rawValue)") as? Bool ?? true
+        }
+        
         loadPersistence()
         requestNotificationPermission()
+    }
+    
+    func toggleBrowser(_ browser: BrowserType) {
+        let newState = !(enabledBrowsers[browser] ?? true)
+        enabledBrowsers[browser] = newState
+        UserDefaults.standard.set(newState, forKey: "Enabled_\(browser.rawValue)")
+        refreshTabs()
     }
     
     func requestNotificationPermission() {
@@ -34,6 +48,11 @@ class TabManager: ObservableObject {
         var allTabs: [TabItem] = []
         
         for browser in BrowserType.allCases {
+            // Skip disabled browsers
+            if let enabled = enabledBrowsers[browser], !enabled {
+                continue
+            }
+            
             let browserTabs = BrowserService.shared.fetchTabs(from: browser)
             let tabItems = browserTabs.map { tab in
                 let metadata = persistence[tab.url]

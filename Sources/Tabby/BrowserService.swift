@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 enum BrowserType: String, CaseIterable, Identifiable {
     case chrome = "Google Chrome"
@@ -6,6 +7,14 @@ enum BrowserType: String, CaseIterable, Identifiable {
     case arc = "Arc"
     
     var id: String { rawValue }
+    
+    var bundleIdentifier: String? {
+        switch self {
+        case .chrome: return "com.google.Chrome"
+        case .safari: return "com.apple.Safari"
+        case .arc: return "company.thebrowser.Browser"
+        }
+    }
 }
 
 struct BrowserTab: Sendable {
@@ -20,6 +29,11 @@ class BrowserService {
     static let shared = BrowserService()
     
     func fetchTabs(from browser: BrowserType) -> [BrowserTab] {
+        // Check if browser is running
+        guard isBrowserRunning(browser) else {
+            return []
+        }
+        
         var scriptSource = ""
         
         switch browser {
@@ -63,6 +77,17 @@ class BrowserService {
         
         return execute(script: scriptSource, browserName: browser.rawValue)
     }
+    
+    private func isBrowserRunning(_ browser: BrowserType) -> Bool {
+        let runningApps = NSWorkspace.shared.runningApplications
+        return runningApps.contains { app in
+            if let id = browser.bundleIdentifier {
+                return app.bundleIdentifier == id
+            }
+            return app.localizedName == browser.rawValue
+        }
+    }
+
     
     private func execute(script: String, browserName: String) -> [BrowserTab] {
         var error: NSDictionary?
