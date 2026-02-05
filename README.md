@@ -1,4 +1,4 @@
-# Tabby 🐱
+# Tabby-MacOS
 
 **Tabby** is a native macOS menu bar application designed to help you manage your browser tabs with context. It allows you to add notes to your open tabs and set reminders that sync directly with your Apple Calendar, combating "tab amnesia" and keeping your workflow organized.
 
