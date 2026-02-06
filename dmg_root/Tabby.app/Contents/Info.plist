@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>Tabby</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.maverick.Tabby</string>
+    <key>CFBundleName</key>
+    <string>Tabby</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Tabby needs to access your browser to read open tabs.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Tabby needs access to your calendar to set reminders for tabs.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Tabby needs access to your reminders to set tasks for tabs.</string>
+</dict>
+</plist>
