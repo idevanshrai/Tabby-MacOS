@@ -94,6 +94,10 @@ class TabManager: ObservableObject {
         }
     }
     
+    func activateTab(_ tab: TabItem) {
+        BrowserService.shared.activateTab(url: tab.url, browser: tab.browser)
+    }
+    
     func updateReminder(for tab: TabItem, date: Date?) {
         var metadata = persistence[tab.url] ?? TabMetadata()
         metadata.reminderDate = date

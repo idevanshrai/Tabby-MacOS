@@ -87,6 +87,45 @@ class BrowserService {
             return app.localizedName == browser.rawValue
         }
     }
+    
+    func activateTab(url: String, browser: String) {
+        guard let browserType = BrowserType(rawValue: browser) else { return }
+        guard isBrowserRunning(browserType) else { return }
+        
+        var scriptSource = ""
+        
+        switch browserType {
+        case .chrome:
+            scriptSource = """
+            tell application "Google Chrome"
+                activate
+                open location "\(url)"
+            end tell
+            """
+        case .safari:
+            scriptSource = """
+            tell application "Safari"
+                activate
+                open location "\(url)"
+            end tell
+            """
+        case .arc:
+             scriptSource = """
+            tell application "Arc"
+                activate
+                open location "\(url)"
+            end tell
+            """
+        }
+        
+        var error: NSDictionary?
+        if let scriptObject = NSAppleScript(source: scriptSource) {
+            scriptObject.executeAndReturnError(&error)
+            if let error = error {
+                print("Activation Error: \(error)")
+            }
+        }
+    }
 
     
     private func execute(script: String, browserName: String) -> [BrowserTab] {

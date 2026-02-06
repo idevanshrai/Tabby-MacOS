@@ -3,11 +3,24 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var tabManager: TabManager
     @State private var showingSettings = false
+    @State private var searchText = ""
+    
+    var filteredTabs: [TabItem] {
+        if searchText.isEmpty {
+            return tabManager.tabs
+        } else {
+            return tabManager.tabs.filter {
+                $0.title.localizedCaseInsensitiveContains(searchText) ||
+                $0.url.localizedCaseInsensitiveContains(searchText) ||
+                ($0.note ?? "").localizedCaseInsensitiveContains(searchText)
+            }
+        }
+    }
     
     var body: some View {
         ZStack {
             if !showingSettings {
-                MainView(showingSettings: $showingSettings)
+                MainView(showingSettings: $showingSettings, searchText: $searchText, tabs: filteredTabs)
                     .transition(.move(edge: .leading))
             } else {
                 SettingsView(showingSettings: $showingSettings)
@@ -24,51 +37,73 @@ struct ContentView: View {
 struct MainView: View {
     @EnvironmentObject var tabManager: TabManager
     @Binding var showingSettings: Bool
+    @Binding var searchText: String
+    var tabs: [TabItem]
     
     var body: some View {
         VStack(spacing: 0) {
             
             // Glass Header
-            HStack {
-                Label("Tabby", systemImage: "safari")
-                    .font(.headline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                Button(action: {
-                    withAnimation(.spring()) {
-                        tabManager.refreshTabs()
+            VStack(spacing: 12) {
+                HStack {
+                    Label("Tabby", systemImage: "safari")
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.spring()) {
+                            tabManager.refreshTabs()
+                        }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary)
                     }
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(GlassButtonStyle())
-                .padding(.trailing, 4)
-                
-                Button(action: {
-                    withAnimation(.spring()) {
-                        showingSettings = true
+                    .buttonStyle(GlassButtonStyle())
+                    .padding(.trailing, 4)
+                    
+                    Button(action: {
+                        withAnimation(.spring()) {
+                            showingSettings = true
+                        }
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary)
                     }
-                }) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.secondary)
+                    .buttonStyle(GlassButtonStyle())
+                    .padding(.trailing, 4)
+                    
+                    Button(action: {
+                        NSApplication.shared.terminate(nil)
+                    }) {
+                        Image(systemName: "power")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.red.opacity(0.8))
+                    }
+                    .buttonStyle(GlassButtonStyle())
                 }
-                .buttonStyle(GlassButtonStyle())
-                .padding(.trailing, 4)
                 
-                Button(action: {
-                    NSApplication.shared.terminate(nil)
-                }) {
-                    Image(systemName: "power")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.red.opacity(0.8))
+                // Search Bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    TextField("Search tabs...", text: $searchText)
+                        .textFieldStyle(.plain) 
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(GlassButtonStyle())
+                .padding(8)
+                .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                .cornerRadius(8)
             }
             .padding()
             .background(.ultraThinMaterial)
@@ -77,11 +112,11 @@ struct MainView: View {
             // Scrollable List
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    if tabManager.tabs.isEmpty {
-                        EmptyStateView()
+                    if tabs.isEmpty {
+                        EmptyStateView(isSearching: !searchText.isEmpty)
                             .padding(.top, 40)
                     } else {
-                        ForEach(tabManager.tabs) { tab in
+                        ForEach(tabs) { tab in
                             TabRow(tab: tab)
                                 .transition(.opacity.combined(with: .slide))
                         }
@@ -249,22 +284,28 @@ struct ToggleRow: View {
 }
 
 struct EmptyStateView: View {
+    var isSearching: Bool = false
+    
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "safari")
-                .font(.system(size: 48))
+            Image(systemName: isSearching ? "magnifyingglass" : "moon.zzz.fill")
+                .font(.system(size: 40))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("No active tabs found")
+            
+            Text(isSearching ? "No tabs found matching your search." : "No Tabs Found")
                 .font(.headline)
                 .foregroundColor(.secondary)
-            Text("Open Chrome, Safari, or Arc to see them here.")
-                .font(.caption)
-                .foregroundColor(.secondary.opacity(0.8))
-                .multilineTextAlignment(.center)
+            
+            if !isSearching {
+                Text("Open chrome, safari, or arc to see tabs here.")
+                    .font(.caption)
+                    .foregroundColor(.secondary.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
         }
     }
 }
-
 struct TabRow: View {
     let tab: TabItem
     @EnvironmentObject var tabManager: TabManager
@@ -320,8 +361,18 @@ struct TabRow: View {
                 
                 Spacer()
                 
-                // Indicators
+                // Action Buttons
                 HStack(spacing: 8) {
+                    // Jump/Activate Button
+                    Button(action: {
+                        tabManager.activateTab(tab)
+                    }) {
+                        Image(systemName: "arrow.up.forward.app.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.blue.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                    
                     if tab.reminderDate != nil {
                         Image(systemName: "bell.fill")
                             .font(.caption2)
