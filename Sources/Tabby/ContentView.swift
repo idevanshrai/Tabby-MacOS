@@ -17,6 +17,13 @@ struct ContentView: View {
         }
     }
     
+    /*
+     * PREMIUM UI CONSTANTS
+     */
+    let appWidth: CGFloat = 420
+    let appHeight: CGFloat = 650
+    // ---------------------
+
     var body: some View {
         ZStack {
             if !showingSettings {
@@ -27,7 +34,7 @@ struct ContentView: View {
                     .transition(.move(edge: .trailing))
             }
         }
-        .frame(width: 400, height: 600)
+        .frame(width: appWidth, height: appHeight)
         .onAppear {
             tabManager.refreshTabs()
         }
@@ -328,6 +335,7 @@ struct TabRow: View {
     @State private var isReminderExpanded: Bool = false
     @State private var noteText: String = ""
     @FocusState private var isNoteFocused: Bool
+    @State private var isHovering: Bool = false
     
     // Helper to get icon for browser
     var browserIcon: String {
@@ -354,21 +362,24 @@ struct TabRow: View {
                         .foregroundColor(.primary)
                 }
                 
+                
                 // Text Info
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(tab.title)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .font(.system(.body, design: .rounded))
+                        .fontWeight(.medium)
                         .foregroundColor(.primary)
                         .lineLimit(1)
                     
                     Text(tab.url)
-                        .font(.system(size: 11))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                     
                     if let note = tab.note, !note.isEmpty {
                         Text(note)
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .font(.system(.caption2, design: .rounded))
+                            .fontWeight(.bold)
                             .foregroundColor(.blue.opacity(0.8))
                             .lineLimit(2)
                             .padding(.top, 2)
@@ -397,7 +408,12 @@ struct TabRow: View {
                 }
             }
             .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isHovering ? Color.primary.opacity(0.04) : Color.clear)
+            )
             .contentShape(Rectangle())
+            .onHover { isHovering = $0 }
             .onTapGesture {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     isExpanded.toggle()
@@ -519,11 +535,11 @@ struct TabRow: View {
             }
         }
         .background(.regularMaterial)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(.white.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(.white.opacity(0.15), lineWidth: 1)
         )
     }
     
@@ -539,15 +555,34 @@ struct GlassButtonStyle: ButtonStyle {
     var color: Color = .secondary
     
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(6)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(color.opacity(configuration.isPressed ? 0.3 : 0.1))
-            )
-            .foregroundColor(color)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+        GlassButton(configuration: configuration, color: color)
+    }
+    
+    struct GlassButton: View {
+        let configuration: Configuration
+        let color: Color
+        @State private var isHovering = false
+        
+        var body: some View {
+            configuration.label
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(color.opacity(configuration.isPressed ? 0.3 : (isHovering ? 0.15 : 0.08)))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(color.opacity(isHovering ? 0.3 : 0.1), lineWidth: 1)
+                )
+                .foregroundColor(color.opacity(isHovering ? 1.0 : 0.8))
+                .scaleEffect(configuration.isPressed ? 0.96 : (isHovering ? 1.02 : 1.0))
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+                .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+                .onHover { hover in
+                    isHovering = hover
+                }
+        }
     }
 }
 
@@ -599,9 +634,12 @@ struct TierAccordionView: View {
                         .foregroundColor(.secondary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(tierColor.opacity(isExpanded ? 0.15 : 0.05))
+                )
             }
             .buttonStyle(.plain)
             
