@@ -12,17 +12,30 @@ import EventKit
 class TabManager: ObservableObject {
     @Published var tabs: [TabItem] = []
     @Published var enabledBrowsers: [BrowserType: Bool] = [:]
+    @Published var availableBrowsers: [BrowserType] = []
     
     private var persistence: [String: TabMetadata] = [:]
+    private var timer: Timer?
     
     init() {
+        // Detect installed browsers
+        availableBrowsers = BrowserType.allCases.filter { $0.isInstalled }
+        
         // Initialize default enabled settings
-        for browser in BrowserType.allCases {
+        for browser in availableBrowsers {
             enabledBrowsers[browser] = UserDefaults.standard.object(forKey: "Enabled_\(browser.rawValue)") as? Bool ?? true
         }
         
         loadPersistence()
         requestNotificationPermission()
+        startAutoRefresh()
+    }
+    
+    func startAutoRefresh() {
+        // Auto-refresh every 60 seconds
+        timer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
+            self?.refreshTabs()
+        }
     }
     
     func toggleBrowser(_ browser: BrowserType) {
@@ -50,7 +63,7 @@ class TabManager: ObservableObject {
         
         // Fetch current tabs from browsers
         var fetchedTabs: [BrowserTab] = []
-        for browser in BrowserType.allCases {
+        for browser in availableBrowsers {
             if let enabled = enabledBrowsers[browser], !enabled { continue }
             fetchedTabs.append(contentsOf: BrowserService.shared.fetchTabs(from: browser))
         }

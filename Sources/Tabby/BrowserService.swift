@@ -5,6 +5,7 @@ enum BrowserType: String, CaseIterable, Identifiable {
     case chrome = "Google Chrome"
     case safari = "Safari"
     case arc = "Arc"
+    case firefox = "Firefox"
     
     var id: String { rawValue }
     
@@ -13,7 +14,15 @@ enum BrowserType: String, CaseIterable, Identifiable {
         case .chrome: return "com.google.Chrome"
         case .safari: return "com.apple.Safari"
         case .arc: return "company.thebrowser.Browser"
+        case .firefox: return "org.mozilla.firefox"
         }
+    }
+    
+    var isInstalled: Bool {
+        if let id = bundleIdentifier {
+            return NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) != nil
+        }
+        return false
     }
 }
 
@@ -73,6 +82,21 @@ class BrowserService {
                 return tabList
             end tell
             """
+        case .firefox:
+             scriptSource = """
+            tell application "Firefox"
+                set tabList to {}
+                activate
+                set windowList to windows
+                repeat with w in windowList
+                    set tList to tabs of w
+                    repeat with t in tList
+                        set end of tabList to {name of t, URL of t}
+                    end repeat
+                end repeat
+                return tabList
+            end tell
+            """
         }
         
         return execute(script: scriptSource, browserName: browser.rawValue)
@@ -112,6 +136,13 @@ class BrowserService {
         case .arc:
              scriptSource = """
             tell application "Arc"
+                activate
+                open location "\(url)"
+            end tell
+            """
+        case .firefox:
+             scriptSource = """
+            tell application "Firefox"
                 activate
                 open location "\(url)"
             end tell

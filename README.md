@@ -18,7 +18,13 @@
 
 ## 🚀 Installation & Usage
 
-### Prerequisites
+### 📥 Easy Install (Recommended)
+1.  **Download** the latest `TabbyInstaller.dmg` from the Releases page.
+2.  **Double-click** the DMG file to open it.
+3.  **Drag and Drop** the `Tabby` app into the `Applications` folder shortcut.
+4.  Open **Tabby** from your Applications folder!
+
+### Building from Source
 - macOS 13.0 (Ventura) or later.
 - Xcode 14+ (if building from source).
 

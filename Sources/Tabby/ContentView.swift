@@ -178,15 +178,22 @@ struct SettingsView: View {
                             .textCase(.uppercase)
                         
                         VStack(spacing: 1) {
-                            ForEach(BrowserType.allCases) { browser in
-                                ToggleRow(
-                                    title: browser.rawValue,
-                                    icon: browserIcon(for: browser.rawValue),
-                                    isOn: Binding(
-                                        get: { tabManager.enabledBrowsers[browser] ?? true },
-                                        set: { _ in tabManager.toggleBrowser(browser) }
+                            if tabManager.availableBrowsers.isEmpty {
+                                Text("No supported browsers found.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .padding()
+                            } else {
+                                ForEach(tabManager.availableBrowsers) { browser in
+                                    ToggleRow(
+                                        title: browser.rawValue,
+                                        icon: browserIcon(for: browser.rawValue),
+                                        isOn: Binding(
+                                            get: { tabManager.enabledBrowsers[browser] ?? true },
+                                            set: { _ in tabManager.toggleBrowser(browser) }
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                         .background(.regularMaterial)
@@ -257,6 +264,7 @@ struct SettingsView: View {
         case "Google Chrome": return "globe"
         case "Safari": return "safari"
         case "Arc": return "circle.grid.cross"
+        case "Firefox": return "flame" // System image for Firefox-like icon
         default: return "network"
         }
     }
@@ -320,6 +328,7 @@ struct TabRow: View {
         case "Google Chrome": return "globe"
         case "Safari": return "safari"
         case "Arc": return "circle.grid.cross"
+        case "Firefox": return "flame"
         default: return "network"
         }
     }
