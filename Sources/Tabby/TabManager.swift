@@ -88,7 +88,8 @@ class TabManager: ObservableObject {
                 url: fetchedTab.url,
                 browser: fetchedTab.browser,
                 note: metadata?.note,
-                reminderDate: metadata?.reminderDate
+                reminderDate: metadata?.reminderDate,
+                tier: TabItem.classify(url: fetchedTab.url, title: fetchedTab.title)
             )
             newTabs.append(tabItem)
         }

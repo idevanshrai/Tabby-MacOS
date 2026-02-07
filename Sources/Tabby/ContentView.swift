@@ -111,14 +111,21 @@ struct MainView: View {
             
             // Scrollable List
             ScrollView {
-                LazyVStack(spacing: 12) {
+                VStack(spacing: 16) {
                     if tabs.isEmpty {
                         EmptyStateView(isSearching: !searchText.isEmpty)
                             .padding(.top, 40)
                     } else {
-                        ForEach(tabs) { tab in
-                            TabRow(tab: tab)
-                                .transition(.opacity.combined(with: .slide))
+                        // Group tabs by tier
+                        let grouped = Dictionary(grouping: tabs, by: { $0.tier })
+                        
+                        // Define Order
+                        let order: [TabTier] = [.focus, .research, .chill, .other]
+                        
+                        ForEach(order, id: \.self) { tier in
+                            if let tierTabs = grouped[tier], !tierTabs.isEmpty {
+                                TierAccordionView(tier: tier, tabs: tierTabs)
+                            }
                         }
                     }
                 }
@@ -541,5 +548,82 @@ struct GlassButtonStyle: ButtonStyle {
             .foregroundColor(color)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+struct TierAccordionView: View {
+    let tier: TabTier
+    let tabs: [TabItem]
+    @State private var isExpanded: Bool = true
+    
+    var tierColor: Color {
+        switch tier {
+        case .focus: return .purple
+        case .research: return .blue
+        case .chill: return .orange
+        case .other: return .secondary
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            Button(action: {
+                withAnimation(.spring()) {
+                    isExpanded.toggle()
+                }
+            }) {
+                HStack {
+                    Image(systemName: tier.icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(tierColor)
+                        .frame(width: 24)
+                    
+                    Text(tier.rawValue)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.primary.opacity(0.8))
+                    
+                    Spacer()
+                    
+                    Text("\(tabs.count)")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.1))
+                        .cornerRadius(6)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+            }
+            .buttonStyle(.plain)
+            
+            // Content
+            if isExpanded {
+                VStack(spacing: 1) {
+                    ForEach(tabs) { tab in
+                        TabRow(tab: tab)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 4)
+                    }
+                }
+                .padding(.bottom, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(.regularMaterial)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(tierColor.opacity(0.3), lineWidth: 1)
+        )
+        .shadow(color: tierColor.opacity(0.05), radius: 5, x: 0, y: 2)
     }
 }
